@@ -15,7 +15,6 @@ import org.springframework.util.DigestUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.time.LocalDateTime;
 
 @Service
 public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> implements EmployeeService {
@@ -44,6 +43,7 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> i
         //5、登录成功，将员工id存入session,并返回成功登录信息
         HttpSession session = request.getSession();
         session.setAttribute("employee",emp.getId());
+
         return R.success(emp);
     }
 
@@ -66,11 +66,11 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> i
     public R<String> addEmployee(HttpServletRequest request, Employee employee){
         //1、初始密码加密
         employee.setPassword(DigestUtils.md5DigestAsHex("123456".getBytes()));
-        employee.setCreateTime(LocalDateTime.now());
-        employee.setUpdateTime(LocalDateTime.now());
+//        employee.setCreateTime(LocalDateTime.now());
+//        employee.setUpdateTime(LocalDateTime.now());
         long id = (Long) request.getSession().getAttribute("employee");
-        employee.setCreateUser(id);
-        employee.setUpdateUser(id);
+//        employee.setCreateUser(id);
+//        employee.setUpdateUser(id);
         this.save(employee);
         return R.success("添加成功");
     }

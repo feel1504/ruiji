@@ -1,6 +1,7 @@
 package com.ygl.rege.filter;
 
 import com.alibaba.fastjson.JSON;
+import com.ygl.rege.commen.BaseContext;
 import com.ygl.rege.commen.R;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -51,6 +52,8 @@ public class loginCheckFilter implements Filter {
         //4、判断登录状态，如果已登录，则直接放行
         if(request.getSession().getAttribute("employee") != null){
             log.info("用户已登录,我在测试，用户id为：{}",request.getSession().getAttribute("employee"));
+            Long id  = (Long) request.getSession().getAttribute("employee");
+            BaseContext.setCurrentId(id);
             filterChain.doFilter(request,response);
             return;
         }
