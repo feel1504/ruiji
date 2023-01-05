@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * 菜品分类
  */
@@ -53,5 +55,14 @@ public class CategoryController {
     public R<String> delete(Long ids){
         categaryService.removeById(ids);
         return R.success("删除成功");
+    }
+
+    @GetMapping("/list")
+    public R<List<Category>> list(Category category){
+        LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(category.getType() != null,Category::getType,category.getType());
+        queryWrapper.orderByDesc(Category::getSort).orderByDesc(Category::getUpdateTime);
+        List<Category> list = categaryService.list(queryWrapper);
+        return R.success(list);
     }
 }
