@@ -1,6 +1,7 @@
 package com.ygl.rege.service.Impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ygl.rege.commen.R;
 import com.ygl.rege.dto.DishDto;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,6 +31,9 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
     CategaryService categaryService;
     @Autowired
     DishFlavorService dishFlavorService;
+    @Autowired
+    DishMapper dishMapper;
+
     public R<String> saveWithFlavor(DishDto dishDto){
         this.save(dishDto);
         List<DishFlavor> flavors = dishDto.getFlavors();
@@ -59,7 +64,34 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
     }
 
     public R<String> update(DishDto dishDto){
-        System.out.println(dishDto.toString());
-        return null;
+        //改dish菜单表
+        this.updateById(dishDto);
+
+        //改dishFlavor口味表
+        List<DishFlavor> flavors = dishDto.getFlavors();
+        dishFlavorService.remove(new LambdaQueryWrapper<DishFlavor>().eq(DishFlavor::getDishId,dishDto.getId()));
+
+        flavors.forEach((item) -> {
+            item.setDishId(dishDto.getId());
+            dishFlavorService.save(item);
+        });
+        return R.success("修改成功");
+    }
+
+    public R<String> delete(long[] ids){
+        LambdaQueryWrapper<DishFlavor> queryWrapper = new LambdaQueryWrapper<>();
+        for (long id : ids) {
+            this.removeById(id);
+            queryWrapper.eq(DishFlavor::getDishId,id);
+            dishFlavorService.remove(queryWrapper);
+        }
+        return R.success("删除成功");
+    }
+
+    public R<String> updateStatus(long[] ids,int status){
+        for (long id : ids) {
+            dishMapper.updateSt(id,status);
+        }
+        return R.success("更新成功");
     }
 }

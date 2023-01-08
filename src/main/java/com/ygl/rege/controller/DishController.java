@@ -6,6 +6,7 @@ import com.ygl.rege.commen.R;
 import com.ygl.rege.dto.DishDto;
 import com.ygl.rege.entity.Category;
 import com.ygl.rege.entity.Dish;
+import com.ygl.rege.entity.DishFlavor;
 import com.ygl.rege.service.CategaryService;
 import com.ygl.rege.service.DishFlavorService;
 import com.ygl.rege.service.DishService;
@@ -14,6 +15,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -68,5 +70,28 @@ public class DishController {
     @PutMapping
     public R<String> update(@RequestBody DishDto dishDto){
         return dishService.update(dishDto);
+    }
+
+    @DeleteMapping
+    public R<String> deletes(long[] ids){
+       return dishService.delete(ids);
+    }
+
+
+    @PostMapping("/status/{status}")
+    public R<String> sales(@PathVariable int status, long[] ids){
+        return dishService.updateStatus(ids,status);
+    }
+
+//    /dish/list?name=就看到你
+//    /dish/list?categoryId=1413384954989060097
+
+    @GetMapping("/list")
+    public R<List<Dish>> getList(String name,Long categoryId){
+        LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(categoryId != null,Dish::getCategoryId,categoryId);
+        queryWrapper.like(name != null,Dish::getName,name);
+        List<Dish> list = dishService.list(queryWrapper);
+        return R.success(list);
     }
 }

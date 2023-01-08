@@ -10,4 +10,6 @@ public interface DishService extends IService<Dish> {
     public R<String> saveWithFlavor(DishDto dishDto);
     public R<DishDto> getById(long id);
     public R<String> update(DishDto dishDto);
+    public R<String> delete(long[] ids);
+    public R<String> updateStatus(long[] ids,int status);
 }
