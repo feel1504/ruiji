@@ -5,7 +5,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ygl.rege.commen.R;
 import com.ygl.rege.dto.SetmealDto;
 import com.ygl.rege.entity.Category;
+import com.ygl.rege.entity.DishFlavor;
 import com.ygl.rege.entity.Setmeal;
+import com.ygl.rege.entity.SetmealDish;
 import com.ygl.rege.service.CategaryService;
 import com.ygl.rege.service.SetmealDishService;
 import com.ygl.rege.service.SetmealService;
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Queue;
 import java.util.stream.Collectors;
 
 @RestController
@@ -70,5 +73,31 @@ public class SetmealController {
     return R.success(dtoPage);
   }
 
+  @DeleteMapping
+  public R<String> deleteByIds(long[] ids){
+    System.out.println(ids);
+    return setmealService.deleteByIds(ids);
+  };
 
+  @GetMapping("/{id}")
+  public R<SetmealDto> getById(@PathVariable Long id){
+    Setmeal setmeal = setmealService.getById(id);
+    LambdaQueryWrapper<SetmealDish> queryWrapper = new LambdaQueryWrapper<>();
+    queryWrapper.eq(SetmealDish::getSetmealId,id);
+    List<SetmealDish> list = setmealDishService.list(queryWrapper);
+
+    SetmealDto dto = new SetmealDto();
+    BeanUtils.copyProperties(setmeal,dto);
+    dto.setSetmealDishes(list);
+    return R.success(dto);
+  }
+  @PutMapping
+  public R<String> update(@RequestBody SetmealDto setmealDto){
+    return setmealService.update(setmealDto);
+  }
+
+  @PostMapping("/status/{status}")
+  public R<String> updateSt(@PathVariable int status,long[] ids){
+    return setmealService.updateSt(status,ids);
+  }
 }

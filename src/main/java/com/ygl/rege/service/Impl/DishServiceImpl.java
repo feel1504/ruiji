@@ -79,9 +79,10 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
     }
 
     public R<String> delete(long[] ids){
-        LambdaQueryWrapper<DishFlavor> queryWrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<DishFlavor> queryWrapper;
         for (long id : ids) {
             this.removeById(id);
+            queryWrapper = new LambdaQueryWrapper<>();
             queryWrapper.eq(DishFlavor::getDishId,id);
             dishFlavorService.remove(queryWrapper);
         }
