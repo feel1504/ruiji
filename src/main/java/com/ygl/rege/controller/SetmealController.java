@@ -74,8 +74,7 @@ public class SetmealController {
   }
 
   @DeleteMapping
-  public R<String> deleteByIds(long[] ids){
-    System.out.println(ids);
+  public R<String> deleteByIds(@RequestParam List<Long> ids){
     return setmealService.deleteByIds(ids);
   };
 

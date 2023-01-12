@@ -22,4 +22,10 @@ public class GlobleExceptionHandler {
         }
         return R.error("未知名错误");
     }
+
+    @ExceptionHandler(CustomException.class)
+    public R<String> exceptionHandler(CustomException ex){
+        String msg = ex.getMessage();
+        return R.error(msg);
+    }
 }
