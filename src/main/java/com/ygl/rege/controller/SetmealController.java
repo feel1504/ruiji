@@ -12,6 +12,7 @@ import com.ygl.rege.service.CategaryService;
 import com.ygl.rege.service.SetmealDishService;
 import com.ygl.rege.service.SetmealService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -98,5 +99,18 @@ public class SetmealController {
   @PostMapping("/status/{status}")
   public R<String> updateSt(@PathVariable int status,long[] ids){
     return setmealService.updateSt(status,ids);
+  }
+
+  @GetMapping("/list")
+  public R<List<Setmeal>> list(Setmeal setmeal) {
+    log.info("setmeal:{}", setmeal);
+    //条件构造器
+    LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
+    queryWrapper.like(StringUtils.isNotEmpty(setmeal.getName()), Setmeal::getName, setmeal.getName());
+    queryWrapper.eq(null != setmeal.getCategoryId(), Setmeal::getCategoryId, setmeal.getCategoryId());
+    queryWrapper.eq(null != setmeal.getStatus(), Setmeal::getStatus, setmeal.getStatus());
+    queryWrapper.orderByDesc(Setmeal::getUpdateTime);
+    List<Setmeal> list = setmealService.list(queryWrapper);
+    return R.success(list);
   }
 }

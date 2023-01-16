@@ -15,6 +15,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -87,11 +88,23 @@ public class DishController {
 //    /dish/list?categoryId=1413384954989060097
 
     @GetMapping("/list")
-    public R<List<Dish>> getList(String name,Long categoryId){
+    public R<List<DishDto>> getList(String name,Long categoryId){
         LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(categoryId != null,Dish::getCategoryId,categoryId);
         queryWrapper.like(name != null,Dish::getName,name);
         List<Dish> list = dishService.list(queryWrapper);
-        return R.success(list);
+
+        List<DishDto> dtoList = list.stream().map((item) -> {
+            DishDto dto = new DishDto();
+            BeanUtils.copyProperties(item, dto);
+            Long id = item.getId();
+            LambdaQueryWrapper<DishFlavor> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(DishFlavor::getDishId, id);
+            List<DishFlavor> flavors = dishFlavorService.list(wrapper);
+            dto.setFlavors(flavors);
+            return dto;
+        }).collect(Collectors.toList());
+
+        return R.success(dtoList);
     }
 }
