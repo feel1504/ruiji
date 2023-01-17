@@ -60,7 +60,7 @@ public class UserController {
         user.setStatus(1);
         userService.save(user);
       }
-      session.setAttribute("user",user);
+      session.setAttribute("user",user.getId());
       return R.success("登录成功");
 
     }
