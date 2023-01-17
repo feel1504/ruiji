@@ -120,4 +120,24 @@ public class AddressController {
         }
         return R.success("修改成功");
     }
+
+    /**
+     * 查默认地址
+     * @return
+     */
+    @GetMapping("/default")
+    public R<AddressBook> getDefault(){
+        LambdaQueryWrapper<AddressBook> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(AddressBook::getUserId, BaseContext.getCurrentId());
+        queryWrapper.eq(AddressBook::getIsDefault, 1);
+
+        //SQL:select * from address_book where user_id = ? and is_default = 1
+        AddressBook addressBook = addressService.getOne(queryWrapper);
+
+        if (null == addressBook) {
+            return R.error("没有找到该对象");
+        } else {
+            return R.success(addressBook);
+        }
+    }
 }
