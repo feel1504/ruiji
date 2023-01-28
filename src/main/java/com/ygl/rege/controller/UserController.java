@@ -8,10 +8,12 @@ import com.ygl.rege.utils.SendMailUtil;
 import com.ygl.rege.utils.ValidateCodeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/user")
@@ -20,6 +22,8 @@ public class UserController {
 
   @Autowired
   UserService userService;
+  @Autowired
+  StringRedisTemplate redisTemplate;
 
   @PostMapping("/sendMsg")
   public R<String> sendMsg(@RequestBody User user, HttpSession session){
@@ -27,7 +31,9 @@ public class UserController {
 
     if(email!=null){
       String code = ValidateCodeUtils.generateValidateCode(4).toString();
-      session.setAttribute(email,code);
+      //session.setAttribute(email,code);
+      //将生成的验证码缓存到redis中
+      redisTemplate.opsForValue().set(email,code,5L, TimeUnit.MINUTES);
 
       SendMailUtil.sendEmailCode(user.getPhone(), code);
       log.info("key是：{}",email);
@@ -46,8 +52,9 @@ public class UserController {
     String code = map.get("code").toString();
     log.info("key是：{}",email);
     //从session获取code
-    String codeInSession = (String)session.getAttribute(email);
-
+    //String codeInSession = (String)session.getAttribute(email);
+    //从redis取出验证码
+    String codeInSession = redisTemplate.opsForValue().get(email);
     if(codeInSession!=null && codeInSession.equals(code)){
       //登录
       LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
@@ -61,8 +68,9 @@ public class UserController {
         userService.save(user);
       }
       session.setAttribute("user",user.getId());
+      //登录成功，删除redis里的验证码
+      redisTemplate.delete(email);
       return R.success("登录成功");
-
     }
     return R.error("登录失败");
   }

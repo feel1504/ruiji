@@ -1,5 +1,6 @@
 package com.ygl.rege.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ygl.rege.commen.R;
@@ -15,10 +16,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @RestController
@@ -31,6 +35,8 @@ public class SetmealController {
   SetmealDishService setmealDishService;
   @Autowired
   CategaryService categaryService;
+  @Autowired
+  StringRedisTemplate redisTemplate;
 
   /**
    * 保存套餐
@@ -104,13 +110,21 @@ public class SetmealController {
   @GetMapping("/list")
   public R<List<Setmeal>> list(Setmeal setmeal) {
     log.info("setmeal:{}", setmeal);
+    List<Setmeal> list = null;
+    String key = "setmeal_"+setmeal.getCategoryId()+"_"+setmeal.getStatus();
+    String s = redisTemplate.opsForValue().get(key);
+    if (s!=null){
+      list = (List<Setmeal>)JSON.parse(s);
+      return R.success(list);
+    }
     //条件构造器
     LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
     queryWrapper.like(StringUtils.isNotEmpty(setmeal.getName()), Setmeal::getName, setmeal.getName());
     queryWrapper.eq(null != setmeal.getCategoryId(), Setmeal::getCategoryId, setmeal.getCategoryId());
     queryWrapper.eq(null != setmeal.getStatus(), Setmeal::getStatus, setmeal.getStatus());
     queryWrapper.orderByDesc(Setmeal::getUpdateTime);
-    List<Setmeal> list = setmealService.list(queryWrapper);
+    list = setmealService.list(queryWrapper);
+    redisTemplate.opsForValue().set(key,JSON.toJSONString(list),1L, TimeUnit.HOURS);
     return R.success(list);
   }
 }

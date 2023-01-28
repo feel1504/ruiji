@@ -1,5 +1,6 @@
 package com.ygl.rege.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ygl.rege.commen.R;
@@ -13,11 +14,13 @@ import com.ygl.rege.service.DishService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @RestController
@@ -31,6 +34,8 @@ public class DishController {
     DishService dishService;
     @Autowired
     CategaryService categaryService;
+    @Autowired
+    StringRedisTemplate redisTemplate;
 
     @PostMapping
     public R<String> save(@RequestBody DishDto dishDto){
@@ -88,13 +93,23 @@ public class DishController {
 //    /dish/list?categoryId=1413384954989060097
 
     @GetMapping("/list")
-    public R<List<DishDto>> getList(String name,Long categoryId){
+    public R<List<DishDto>> getList(Dish dish){
+        List<DishDto> dtoList = null;
+        //构造rediskey
+        String key = "dish_"+dish.getCategoryId()+"_"+dish.getStatus();
+        //从redis查菜品数据
+        String s = redisTemplate.opsForValue().get(key);
+        if(s != null){
+            dtoList = (List<DishDto>)JSON.parse(s);
+            return R.success(dtoList);
+        }
+
         LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(categoryId != null,Dish::getCategoryId,categoryId);
-        queryWrapper.like(name != null,Dish::getName,name);
+        queryWrapper.eq(dish.getCategoryId() != null,Dish::getCategoryId,dish.getCategoryId());
+        queryWrapper.eq(Dish::getStatus,1);
         List<Dish> list = dishService.list(queryWrapper);
 
-        List<DishDto> dtoList = list.stream().map((item) -> {
+        dtoList = list.stream().map((item) -> {
             DishDto dto = new DishDto();
             BeanUtils.copyProperties(item, dto);
             Long id = item.getId();
@@ -104,7 +119,8 @@ public class DishController {
             dto.setFlavors(flavors);
             return dto;
         }).collect(Collectors.toList());
-
+        //将从数据库查出来的菜品数据放入redis
+        redisTemplate.opsForValue().set(key,JSON.toJSONString(dtoList),1L, TimeUnit.HOURS);
         return R.success(dtoList);
     }
 }

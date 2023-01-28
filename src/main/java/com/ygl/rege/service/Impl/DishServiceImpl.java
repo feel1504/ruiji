@@ -14,12 +14,15 @@ import com.ygl.rege.service.DishService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -33,6 +36,8 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
     DishFlavorService dishFlavorService;
     @Autowired
     DishMapper dishMapper;
+    @Autowired
+    StringRedisTemplate redisTemplate;
 
     public R<String> saveWithFlavor(DishDto dishDto){
         this.save(dishDto);
@@ -42,6 +47,13 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
             return item;
         }).collect(Collectors.toList());
         dishFlavorService.saveBatch(flavors);
+        //清除所有菜品数据
+//        Set keys = redisTemplate.keys("dish_*");
+//        redisTemplate.delete(keys);
+
+        //清除某一类型数据（根据categoryId分类的菜品）
+        Set keys = redisTemplate.keys("dish_" + dishDto.getCategoryId() + "_1");
+        redisTemplate.delete(keys);
         return R.success("数据保存成功");
     }
     public R<DishDto> getById(@PathVariable long id){
@@ -75,6 +87,9 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
             item.setDishId(dishDto.getId());
             dishFlavorService.save(item);
         });
+        //清除某一类型数据（根据categoryId分类的菜品）
+        Set keys = redisTemplate.keys("dish_" + dishDto.getCategoryId() + "_1");
+        redisTemplate.delete(keys);
         return R.success("修改成功");
     }
 

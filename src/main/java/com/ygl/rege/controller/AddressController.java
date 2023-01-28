@@ -10,6 +10,7 @@ import com.ygl.rege.entity.AddressBook;
 import com.ygl.rege.service.AddressService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,6 +24,9 @@ public class AddressController {
     @Autowired
     AddressService addressService;
     //3351878643@QQ.COM
+    @Autowired
+    StringRedisTemplate stringRedisTemplate;
+
 
     /**
      * 展示所有地址
