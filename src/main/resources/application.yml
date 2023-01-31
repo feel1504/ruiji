@@ -6,6 +6,9 @@ spring:
     host: 192.168.38.100
     #password:
     database: 0
+  cache:
+    redis:
+      time-to-live: 180000
   application:
     name: reggie_take_out
   datasource:

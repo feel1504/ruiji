@@ -16,6 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -36,7 +39,7 @@ public class SetmealController {
   @Autowired
   CategaryService categaryService;
   @Autowired
-  StringRedisTemplate redisTemplate;
+  CacheManager cacheManager;
 
   /**
    * 保存套餐
@@ -81,6 +84,7 @@ public class SetmealController {
   }
 
   @DeleteMapping
+  @CacheEvict(value = "SetMealCache",allEntries = true)
   public R<String> deleteByIds(@RequestParam List<Long> ids){
     return setmealService.deleteByIds(ids);
   };
@@ -98,25 +102,23 @@ public class SetmealController {
     return R.success(dto);
   }
   @PutMapping
+  @CacheEvict(value = "SetMealCache",allEntries = true)
   public R<String> update(@RequestBody SetmealDto setmealDto){
     return setmealService.update(setmealDto);
   }
 
   @PostMapping("/status/{status}")
+  @CacheEvict(value = "SetMealCache",allEntries = true)
   public R<String> updateSt(@PathVariable int status,long[] ids){
     return setmealService.updateSt(status,ids);
   }
 
   @GetMapping("/list")
+  @Cacheable(value = "SetMealCache", key = "#setmeal.categoryId + '_' + #setmeal.status")
   public R<List<Setmeal>> list(Setmeal setmeal) {
+    //这里的R需要实现序列化接口Serializable,否则不会缓存成功
     log.info("setmeal:{}", setmeal);
     List<Setmeal> list = null;
-    String key = "setmeal_"+setmeal.getCategoryId()+"_"+setmeal.getStatus();
-    String s = redisTemplate.opsForValue().get(key);
-    if (s!=null){
-      list = (List<Setmeal>)JSON.parse(s);
-      return R.success(list);
-    }
     //条件构造器
     LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
     queryWrapper.like(StringUtils.isNotEmpty(setmeal.getName()), Setmeal::getName, setmeal.getName());
@@ -124,7 +126,6 @@ public class SetmealController {
     queryWrapper.eq(null != setmeal.getStatus(), Setmeal::getStatus, setmeal.getStatus());
     queryWrapper.orderByDesc(Setmeal::getUpdateTime);
     list = setmealService.list(queryWrapper);
-    redisTemplate.opsForValue().set(key,JSON.toJSONString(list),1L, TimeUnit.HOURS);
     return R.success(list);
   }
 }
